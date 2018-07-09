@@ -17,8 +17,8 @@
     <button ion-button icon-only color="danger" clear>
       <ion-icon name="images"></ion-icon>
     </button>
-    <ion-input type="text" placeholder="Comenta algo..."></ion-input>
-    <button ion-button icon-only color="danger" clear>
+    <ion-input type="text" placeholder="Comenta algo..." [(ngModel)]="text"></ion-input>
+    <button ion-button icon-only color="danger" clear (click)="post()">
         <ion-icon name="send"></ion-icon>
       </button>
   </ion-row>
