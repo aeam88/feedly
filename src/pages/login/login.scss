@@ -1,12 +1,12 @@
 page-login {
     ion-content {
         .scroll-content {
-            background-color: map-get($colors , danger);
+            background-color: map-get($colors , radicalRed);
         }
     }
 
     .item {
-        background-color: map-get($colors, danger )
+        background-color: map-get($colors, radicalRed )
     }
     .logo {
         font-size: 25vh;
