@@ -11,6 +11,7 @@ webpackJsonp([0],{
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_firebase___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_firebase__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_moment__ = __webpack_require__(1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_moment___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3_moment__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__login_login__ = __webpack_require__(199);
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -24,26 +25,81 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 
 
 
+
 var FeedPage = /** @class */ (function () {
-    function FeedPage(navCtrl, navParams) {
+    function FeedPage(navCtrl, navParams, loadingCtrl, toastCtrl) {
         this.navCtrl = navCtrl;
         this.navParams = navParams;
+        this.loadingCtrl = loadingCtrl;
+        this.toastCtrl = toastCtrl;
         this.text = "";
         this.posts = [];
+        this.pageSize = 10;
         this.getPosts();
     }
     FeedPage.prototype.getPosts = function () {
         var _this = this;
         this.posts = [];
-        __WEBPACK_IMPORTED_MODULE_2_firebase___default.a.firestore().collection("posts").orderBy("created", "desc").get()
+        var loading = this.loadingCtrl.create({
+            content: "Cargando feeds..."
+        });
+        loading.present();
+        var query = __WEBPACK_IMPORTED_MODULE_2_firebase___default.a.firestore().collection("posts").orderBy("created", "desc").limit(this.pageSize);
+        // query.onSnapshot((snapshot) => {
+        //   let changedDocs = snapshot.docChanges();
+        //   changedDocs.forEach((change) => {
+        //     if(change.type == "added"){
+        //       //TODO
+        //     }
+        //     if(change.type == "modified"){
+        //       console.log("El documento con el id " + change.doc.id + "ha sido modificado");
+        //     }
+        //     if(change.type == "removed"){
+        //       //TODO
+        //     }
+        //   })
+        // })
+        query.get()
+            .then(function (docs) {
+            docs.forEach(function (doc) {
+                _this.posts.push(doc);
+            });
+            loading.dismiss();
+            _this.cursor = _this.posts[_this.posts.length - 1];
+            console.log(_this.posts);
+        }).catch(function (err) {
+            console.log(err);
+        });
+    };
+    FeedPage.prototype.loadMorePosts = function (event) {
+        var _this = this;
+        __WEBPACK_IMPORTED_MODULE_2_firebase___default.a.firestore().collection("posts").orderBy("created", "desc")
+            .startAfter(this.cursor)
+            .limit(this.pageSize).get()
             .then(function (docs) {
             docs.forEach(function (doc) {
                 _this.posts.push(doc);
             });
             console.log(_this.posts);
+            if (docs.size < _this.pageSize) {
+                event.enable(false);
+                _this.infiniteEvent = event;
+            }
+            else {
+                event.complete();
+                _this.cursor = _this.posts[_this.posts.length - 1];
+            }
         }).catch(function (err) {
             console.log(err);
         });
+    };
+    FeedPage.prototype.refresh = function (event) {
+        this.posts = [];
+        this.getPosts();
+        if (this.infiniteEvent) {
+            this.infiniteEvent.enable(true);
+        }
+        event.complete();
     };
     FeedPage.prototype.post = function () {
         var _this = this;
@@ -53,6 +109,11 @@ var FeedPage = /** @class */ (function () {
             owner: __WEBPACK_IMPORTED_MODULE_2_firebase___default.a.auth().currentUser.uid,
             owner_name: __WEBPACK_IMPORTED_MODULE_2_firebase___default.a.auth().currentUser.displayName
         }).then(function (doc) {
+            _this.text = "";
+            var toast = _this.toastCtrl.create({
+                message: "Tu post a sido creado exitosamente.",
+                duration: 3000
+            }).present();
             _this.getPosts();
         }).catch(function (err) {
             console.log(err);
@@ -62,13 +123,24 @@ var FeedPage = /** @class */ (function () {
         var difference = __WEBPACK_IMPORTED_MODULE_3_moment___default()(time).diff(__WEBPACK_IMPORTED_MODULE_3_moment___default()());
         return __WEBPACK_IMPORTED_MODULE_3_moment___default.a.duration(difference).humanize();
     };
+    FeedPage.prototype.logout = function () {
+        var _this = this;
+        __WEBPACK_IMPORTED_MODULE_2_firebase___default.a.auth().signOut().then(function () {
+            var toast = _this.toastCtrl.create({
+                message: "Te has deslogueado exitosamente.",
+                duration: 3000
+            }).present();
+            _this.navCtrl.setRoot(__WEBPACK_IMPORTED_MODULE_4__login_login__["a" /* LoginPage */]);
+        });
+    };
     FeedPage = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'page-feed',template:/*ion-inline-start:"C:\Users\Planit\Desktop\movie last\feedly\src\pages\feed\feed.html"*/'<ion-header>\n\n\n\n  <ion-navbar color="radicalRed">\n\n    <ion-title>Tus feeds</ion-title>\n\n    <ion-buttons end>\n\n      <button ion-button icon-only clear>\n\n        <ion-icon name="log-out"></ion-icon>\n\n      </button>\n\n    </ion-buttons>\n\n  </ion-navbar>\n\n\n\n</ion-header>\n\n\n\n\n\n<ion-content>\n\n  <ion-row margin class="rowStyle">\n\n    <button ion-button icon-only color="radicalRed" clear>\n\n      <ion-icon name="images"></ion-icon>\n\n    </button>\n\n    <ion-input type="text" placeholder="Comenta algo..." [(ngModel)]="text"></ion-input>\n\n    <button ion-button icon-only color="radicalRed" clear (click)="post()">\n\n        <ion-icon name="send"></ion-icon>\n\n      </button>\n\n  </ion-row>\n\n  <ion-card *ngFor="let post of posts">\n\n    <ion-item-divider color="radicalRed">\n\n      {{ post.data().owner_name }} Dice\n\n    </ion-item-divider>\n\n    <ion-item text-wrap>\n\n      {{ post.data().text }}\n\n    </ion-item>\n\n    <ion-row class="bottom-bar">\n\n      <ion-col>\n\n        <button ion-button block icon-left clear small color="radicalRed" class="border-right">\n\n          <ion-icon name="thumbs-up"></ion-icon>\n\n          <small>12 Likes</small>\n\n        </button>\n\n      </ion-col>\n\n      <ion-col>\n\n          <button ion-button block icon-left clear small color="radicalRed" class="border-right">\n\n            <ion-icon name="text"></ion-icon>\n\n            <small>12 Coment.</small>\n\n          </button>\n\n      </ion-col>\n\n      <ion-col>\n\n        <button ion-button block icon-left clear small color="radicalRed">\n\n          <small>hace {{ ago(post.data().created.toDate()) }}</small>\n\n        </button>\n\n      </ion-col>\n\n    </ion-row>\n\n  </ion-card>\n\n\n\n</ion-content>\n\n'/*ion-inline-end:"C:\Users\Planit\Desktop\movie last\feedly\src\pages\feed\feed.html"*/,
+            selector: 'page-feed',template:/*ion-inline-start:"/Volumes/mi respaldo/proyectosaeam/feedly/src/pages/feed/feed.html"*/'<ion-header>\n\n  <ion-navbar color="radicalRed">\n    <ion-title>Tus feeds</ion-title>\n    <ion-buttons end>\n      <button ion-button icon-only clear (click)="logout()">\n        <ion-icon name="log-out"></ion-icon>\n      </button>\n    </ion-buttons>\n  </ion-navbar>\n\n</ion-header>\n\n\n<ion-content>\n  <ion-row margin class="rowStyle">\n    <button ion-button icon-only color="radicalRed" clear>\n      <ion-icon name="images"></ion-icon>\n    </button>\n    <ion-input type="text" placeholder="Comenta algo..." [(ngModel)]="text"></ion-input>\n    <button ion-button icon-only color="radicalRed" clear (click)="post()">\n        <ion-icon name="send"></ion-icon>\n      </button>\n  </ion-row>\n  <ion-refresher (ionRefresh)="refresh($event)">\n    <ion-refresher-content></ion-refresher-content>\n  </ion-refresher>\n  <ion-card *ngFor="let post of posts">\n    <ion-item-divider color="radicalRed">\n      {{ post.data().owner_name }} Dice\n    </ion-item-divider>\n    <ion-item text-wrap>\n      {{ post.data().text }}\n    </ion-item>\n    <ion-row class="bottom-bar">\n      <ion-col>\n        <button ion-button block icon-left clear small color="radicalRed" class="border-right">\n          <ion-icon name="thumbs-up"></ion-icon>\n          <small>12 Likes</small>\n        </button>\n      </ion-col>\n      <ion-col>\n          <button ion-button block icon-left clear small color="radicalRed" class="border-right">\n            <ion-icon name="text"></ion-icon>\n            <small>12 Coment.</small>\n          </button>\n      </ion-col>\n      <ion-col>\n        <button ion-button block icon-left clear small color="radicalRed">\n          <small>hace {{ ago(post.data().created.toDate()) }}</small>\n        </button>\n      </ion-col>\n    </ion-row>\n  </ion-card>\n\n  <ion-infinite-scroll (ionInfinite)="loadMorePosts($event)">\n    <ion-infinite-scroll-content></ion-infinite-scroll-content>\n  </ion-infinite-scroll>\n\n</ion-content>\n'/*ion-inline-end:"/Volumes/mi respaldo/proyectosaeam/feedly/src/pages/feed/feed.html"*/,
         }),
-        __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1_ionic_angular__["e" /* NavController */], __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["f" /* NavParams */]])
+        __metadata("design:paramtypes", [typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["f" /* NavController */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["f" /* NavController */]) === "function" && _a || Object, typeof (_b = typeof __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["g" /* NavParams */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["g" /* NavParams */]) === "function" && _b || Object, typeof (_c = typeof __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["e" /* LoadingController */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["e" /* LoadingController */]) === "function" && _c || Object, typeof (_d = typeof __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["i" /* ToastController */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["i" /* ToastController */]) === "function" && _d || Object])
     ], FeedPage);
     return FeedPage;
+    var _a, _b, _c, _d;
 }());
 
 //# sourceMappingURL=feed.js.map
@@ -164,9 +236,9 @@ var LoginPage = /** @class */ (function () {
     };
     LoginPage = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'page-login',template:/*ion-inline-start:"C:\Users\Planit\Desktop\movie last\feedly\src\pages\login\login.html"*/'<ion-header hidden>\n\n  <ion-navbar color="greenPrin">\n\n    <ion-title>\n\n      Feedly\n\n    </ion-title>\n\n  </ion-navbar>\n\n</ion-header>\n\n\n\n<ion-content padding>\n\n  <ion-item text-center no-lines>\n\n    <ion-icon name="logo-rss" class="logo" color="light"></ion-icon>\n\n  </ion-item>\n\n  <ion-item text-center no-lines>\n\n    <h1>feedly</h1>\n\n    <h6>Una app para tus feeds</h6>\n\n  </ion-item>\n\n  <ion-grid style="width: 75%">\n\n    <ion-row class="rowStyle">\n\n      <ion-icon name="mail" color="radicalRed"></ion-icon>\n\n      <ion-input type="email" placeholder="Tu email" [(ngModel)]="email"></ion-input>\n\n    </ion-row>\n\n    <ion-row class="rowStyle">\n\n      <ion-icon name="key" color="radicalRed"></ion-icon>\n\n      <ion-input type="password" placeholder="Tu password" [(ngModel)]="password"></ion-input>\n\n    </ion-row>\n\n    <ion-row>\n\n      <button ion-button block round outline color="light" style="margin-top: 20px;" (click)="login()">Login</button>\n\n    </ion-row>\n\n  </ion-grid>\n\n  <button ion-button block clear color="light" (click)="gotoSignup()">¿No tienes cuenta? Registro</button>\n\n</ion-content>\n\n'/*ion-inline-end:"C:\Users\Planit\Desktop\movie last\feedly\src\pages\login\login.html"*/
+            selector: 'page-login',template:/*ion-inline-start:"/Volumes/mi respaldo/proyectosaeam/feedly/src/pages/login/login.html"*/'<ion-header hidden>\n  <ion-navbar color="greenPrin">\n    <ion-title>\n      Feedly\n    </ion-title>\n  </ion-navbar>\n</ion-header>\n\n<ion-content padding>\n  <ion-item text-center no-lines>\n    <ion-icon name="logo-rss" class="logo" color="light"></ion-icon>\n  </ion-item>\n  <ion-item text-center no-lines>\n    <h1>feedly</h1>\n    <h6>Una app para tus feeds</h6>\n  </ion-item>\n  <ion-grid style="width: 75%">\n    <ion-row class="rowStyle">\n      <ion-icon name="mail" color="radicalRed"></ion-icon>\n      <ion-input type="email" placeholder="Tu email" [(ngModel)]="email"></ion-input>\n    </ion-row>\n    <ion-row class="rowStyle">\n      <ion-icon name="key" color="radicalRed"></ion-icon>\n      <ion-input type="password" placeholder="Tu password" [(ngModel)]="password"></ion-input>\n    </ion-row>\n    <ion-row>\n      <button ion-button block round outline color="light" style="margin-top: 20px;" (click)="login()">Login</button>\n    </ion-row>\n  </ion-grid>\n  <button ion-button block clear color="light" (click)="gotoSignup()">¿No tienes cuenta? Registro</button>\n</ion-content>\n'/*ion-inline-end:"/Volumes/mi respaldo/proyectosaeam/feedly/src/pages/login/login.html"*/
         }),
-        __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1_ionic_angular__["e" /* NavController */], __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["h" /* ToastController */]])
+        __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1_ionic_angular__["f" /* NavController */], __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["i" /* ToastController */]])
     ], LoginPage);
     return LoginPage;
 }());
@@ -247,9 +319,9 @@ var SignupPage = /** @class */ (function () {
     };
     SignupPage = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'page-signup',template:/*ion-inline-start:"C:\Users\Planit\Desktop\movie last\feedly\src\pages\signup\signup.html"*/'<ion-header>\n\n    <ion-navbar color="radicalRed">\n\n      \n\n    </ion-navbar>\n\n  </ion-header>\n\n  \n\n  <ion-content padding>\n\n    <ion-item text-center no-lines>\n\n      <ion-icon name="logo-rss" class="logo" color="light"></ion-icon>\n\n    </ion-item>\n\n    <ion-item text-center no-lines>\n\n      <h1>feedly</h1>\n\n      <h6>Una app para tus feeds</h6>\n\n    </ion-item>\n\n    <ion-grid style="width: 75%">\n\n      <ion-row class="rowStyle">\n\n        <ion-icon name="person" color="radicalRed"></ion-icon>\n\n        <ion-input type="text" placeholder="Tu nombre" [(ngModel)]="name"></ion-input>\n\n      </ion-row>\n\n      <ion-row class="rowStyle">\n\n        <ion-icon name="mail" color="radicalRed"></ion-icon>\n\n        <ion-input type="email" placeholder="Tu email" [(ngModel)]="email"></ion-input>\n\n      </ion-row>\n\n      <ion-row class="rowStyle">\n\n          <ion-icon name="key" color="radicalRed"></ion-icon>\n\n        <ion-input type="password" placeholder="Tu password" [(ngModel)]="password"></ion-input>\n\n      </ion-row>\n\n      <ion-row>\n\n        <button ion-button block round outline color="light" style="margin-top: 20px;" (click)="signup()">Registro</button>\n\n      </ion-row>\n\n    </ion-grid>\n\n    <button ion-button block clear color="light" (click)="goBack()">¿Ya tienes cuenta? Login</button>\n\n  </ion-content>\n\n  '/*ion-inline-end:"C:\Users\Planit\Desktop\movie last\feedly\src\pages\signup\signup.html"*/,
+            selector: 'page-signup',template:/*ion-inline-start:"/Volumes/mi respaldo/proyectosaeam/feedly/src/pages/signup/signup.html"*/'<ion-header>\n    <ion-navbar color="radicalRed">\n      \n    </ion-navbar>\n  </ion-header>\n  \n  <ion-content padding>\n    <ion-item text-center no-lines>\n      <ion-icon name="logo-rss" class="logo" color="light"></ion-icon>\n    </ion-item>\n    <ion-item text-center no-lines>\n      <h1>feedly</h1>\n      <h6>Una app para tus feeds</h6>\n    </ion-item>\n    <ion-grid style="width: 75%">\n      <ion-row class="rowStyle">\n        <ion-icon name="person" color="radicalRed"></ion-icon>\n        <ion-input type="text" placeholder="Tu nombre" [(ngModel)]="name"></ion-input>\n      </ion-row>\n      <ion-row class="rowStyle">\n        <ion-icon name="mail" color="radicalRed"></ion-icon>\n        <ion-input type="email" placeholder="Tu email" [(ngModel)]="email"></ion-input>\n      </ion-row>\n      <ion-row class="rowStyle">\n          <ion-icon name="key" color="radicalRed"></ion-icon>\n        <ion-input type="password" placeholder="Tu password" [(ngModel)]="password"></ion-input>\n      </ion-row>\n      <ion-row>\n        <button ion-button block round outline color="light" style="margin-top: 20px;" (click)="signup()">Registro</button>\n      </ion-row>\n    </ion-grid>\n    <button ion-button block clear color="light" (click)="goBack()">¿Ya tienes cuenta? Login</button>\n  </ion-content>\n  '/*ion-inline-end:"/Volumes/mi respaldo/proyectosaeam/feedly/src/pages/signup/signup.html"*/,
         }),
-        __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1_ionic_angular__["e" /* NavController */], __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["f" /* NavParams */], __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["h" /* ToastController */], __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["a" /* AlertController */]])
+        __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1_ionic_angular__["f" /* NavController */], __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["g" /* NavParams */], __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["i" /* ToastController */], __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["a" /* AlertController */]])
     ], SignupPage);
     return SignupPage;
 }());
@@ -389,9 +461,9 @@ var MyApp = /** @class */ (function () {
         });
     }
     MyApp = __decorate([
-        Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({template:/*ion-inline-start:"C:\Users\Planit\Desktop\movie last\feedly\src\app\app.html"*/'<ion-nav [root]="rootPage"></ion-nav>\n\n'/*ion-inline-end:"C:\Users\Planit\Desktop\movie last\feedly\src\app\app.html"*/
+        Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({template:/*ion-inline-start:"/Volumes/mi respaldo/proyectosaeam/feedly/src/app/app.html"*/'<ion-nav [root]="rootPage"></ion-nav>\n'/*ion-inline-end:"/Volumes/mi respaldo/proyectosaeam/feedly/src/app/app.html"*/
         }),
-        __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1_ionic_angular__["g" /* Platform */], __WEBPACK_IMPORTED_MODULE_2__ionic_native_status_bar__["a" /* StatusBar */], __WEBPACK_IMPORTED_MODULE_3__ionic_native_splash_screen__["a" /* SplashScreen */]])
+        __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1_ionic_angular__["h" /* Platform */], __WEBPACK_IMPORTED_MODULE_2__ionic_native_status_bar__["a" /* StatusBar */], __WEBPACK_IMPORTED_MODULE_3__ionic_native_splash_screen__["a" /* SplashScreen */]])
     ], MyApp);
     return MyApp;
 }());
