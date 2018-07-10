@@ -14,13 +14,18 @@
 
 <ion-content>
   <ion-row margin class="rowStyle">
-    <button ion-button icon-only color="radicalRed" clear>
+    <button ion-button icon-only color="radicalRed" clear (click)="addPhoto()">
       <ion-icon name="images"></ion-icon>
     </button>
     <ion-input type="text" placeholder="Comenta algo..." [(ngModel)]="text"></ion-input>
     <button ion-button icon-only color="radicalRed" clear (click)="post()">
         <ion-icon name="send"></ion-icon>
       </button>
+  </ion-row>
+  <ion-row margin class="rowStyle" *ngIf="image">
+    <ion-card class="round-corners">
+      <img [src]="image" class="round-corners">
+    </ion-card>
   </ion-row>
   <ion-refresher (ionRefresh)="refresh($event)">
     <ion-refresher-content></ion-refresher-content>

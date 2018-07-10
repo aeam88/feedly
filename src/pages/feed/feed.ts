@@ -4,6 +4,7 @@ import { NavController, NavParams, LoadingController, ToastController } from 'io
 import firebase from 'firebase';
 import moment from 'moment';
 import { LoginPage } from '../login/login';
+import { Camera, CameraOptions } from '@ionic-native/camera';
 
 @Component({
   selector: 'page-feed',
@@ -16,8 +17,10 @@ export class FeedPage {
   pageSize: number = 10;
   cursor: any;
   infiniteEvent: any;
+  image: string;
 
-  constructor(public navCtrl: NavController, public navParams: NavParams, private loadingCtrl: LoadingController, private toastCtrl: ToastController) {
+  constructor(public navCtrl: NavController, public navParams: NavParams, private loadingCtrl: LoadingController, 
+    private toastCtrl: ToastController, private camera: Camera) {
     this.getPosts();
   }
 
@@ -133,6 +136,33 @@ export class FeedPage {
       }).present();
       
       this.navCtrl.setRoot(LoginPage);
+    })
+  }
+
+  addPhoto() {
+    this.launchCamera();
+  }
+
+  launchCamera() {
+    let options: CameraOptions = {
+      quality: 100,
+      sourceType: this.camera.PictureSourceType.CAMERA,
+      destinationType: this.camera.DestinationType.DATA_URL,
+      encodingType: this.camera.EncodingType.PNG,
+      mediaType: this.camera.MediaType.PICTURE,
+      correctOrientation: true,
+      targetHeight: 512,
+      targetWidth: 512,
+      allowEdit: true
+    }
+
+    this.camera.getPicture(options).then((base64Image) => {
+      console.log(base64Image);
+
+      this.image = "data:image/png;base64," + base64Image;
+
+    }).catch((err) => {
+      console.log(err);
     })
   }
 
