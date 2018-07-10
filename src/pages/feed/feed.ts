@@ -109,8 +109,14 @@ export class FeedPage {
       created: firebase.firestore.FieldValue.serverTimestamp(),
       owner: firebase.auth().currentUser.uid,
       owner_name: firebase.auth().currentUser.displayName
-    }).then((doc) => {
+    }).then(async (doc) => {
+
+      if(this.image) {
+        await this.upload(doc.id)
+      }
+
       this.text = "";
+      this.image = undefined;
 
       let toast = this.toastCtrl.create({
         message: "Tu post a sido creado exitosamente.",
@@ -163,6 +169,47 @@ export class FeedPage {
 
     }).catch((err) => {
       console.log(err);
+    })
+  }
+
+  upload(name: string) {
+    return new Promise((resolve, reject) => {
+
+      let loading = this.loadingCtrl.create({
+        content: "Subiendo imagen"
+      })
+
+      let ref = firebase.storage().ref("postImages/" + name);
+
+      let uploadTask = ref.putString(this.image.split(',')[1], "base64");
+
+      uploadTask.on("state_changed", (taskSnapshot: any) => {
+        console.log(taskSnapshot);
+
+        let percentage = taskSnapshot.bytesTransferred / taskSnapshot.totalBytes * 100;
+        loading.setContent("Subiendo " + percentage + "%")
+
+      }, (error) => {
+        console.log(error);
+      }, () => {
+        console.log("La fotografia se termino de subir!");
+
+        uploadTask.snapshot.ref.getDownloadURL().then((url) => {
+          firebase.firestore().collection("posts").doc(name).update({
+            image: url
+          }).then(() => {
+            loading.dismiss()
+            resolve()
+          }).catch((err) => {
+            loading.dismiss()
+            reject()
+          })
+        }).catch((err) => {
+          loading.dismiss()
+          reject()
+        })
+
+      })
     })
   }
 
