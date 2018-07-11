@@ -40,7 +40,7 @@
     <img [src]="post.data().image" *ngIf="post.data().image">
     <ion-row class="bottom-bar">
       <ion-col>
-        <button ion-button block icon-left clear small color="radicalRed" class="border-right">
+        <button ion-button block icon-left clear small color="radicalRed" class="border-right" (click)="like(post)">
           <ion-icon name="thumbs-up"></ion-icon>
           <small>12 Likes</small>
         </button>

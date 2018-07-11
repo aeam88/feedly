@@ -5,6 +5,7 @@ import firebase from 'firebase';
 import moment from 'moment';
 import { LoginPage } from '../login/login';
 import { Camera, CameraOptions } from '@ionic-native/camera';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'page-feed',
@@ -20,7 +21,7 @@ export class FeedPage {
   image: string;
 
   constructor(public navCtrl: NavController, public navParams: NavParams, private loadingCtrl: LoadingController, 
-    private toastCtrl: ToastController, private camera: Camera) {
+    private toastCtrl: ToastController, private camera: Camera, private http: HttpClient) {
     this.getPosts();
   }
 
@@ -210,6 +211,22 @@ export class FeedPage {
         })
 
       })
+    })
+  }
+
+  like(post) {
+    let body = {
+      postId: post.id,
+      userId: firebase.auth().currentUser.uid,
+      action: post.data().likes && post.data().likes[firebase.auth().currentUser.uid] == true ? "unlike" : "like"
+    }
+
+    this.http.post("https://us-central1-feedly-5e940.cloudfunctions.net/updateLikesCount", JSON.stringify(body), {
+      responseType: "text"
+    }).subscribe((data) => {
+      console.log(data);
+    }, (err) => {
+      console.log(err);
     })
   }
 
